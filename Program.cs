@@ -1,58 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
-using HRdepartment.domain;
+using System.Reflection;
 
-namespace _053501_Peshko_Lab9
+namespace _053501_Raiko_Lab10.Main
 {
-    static public class Program
+    class Program
     {
         static void Main(string[] args)
         {
-            List<HRDepartment> HRDEE = new List<HRDepartment>();
-            HRDEE.Add(new HRDepartment(1));
-            HRDEE.Add(new HRDepartment(2));
-            HRDEE.Add(new HRDepartment(3));
+            const string Dll = "LR-10FileServiceLib.dll";
+            const string Json = "Metadata.json";
 
-            List<HRDepartment> HRDNE = new List<HRDepartment>();
-            HRDNE.Add(new HRDepartment(1));
-            HRDNE.Add(new HRDepartment(2));
-            HRDNE.Add(new HRDepartment(3));
+            List<Employee> employees = new List<Employee>();
+            employees.Add(new Employee("Vilgelm", 54, false));
+            employees.Add(new Employee("Andru", 28, true));
+            employees.Add(new Employee("Lucifer", 34, false));
+            employees.Add(new Employee("Rumpel", 40, true));
 
-            List<Firm> set = new List<Firm>();
-            set.Add(new Firm("StarkIndustries", HRDEE));
-            set.Add(new Firm("WayneEnterprises", HRDNE));
+            Assembly asm = Assembly.LoadFrom(Dll);
+            Type t = asm.GetType("LR_10FileServiceLib.FileService`1", true, true);
+            t = t.MakeGenericType(typeof(Employee));
+            object  obj = Activator.CreateInstance(t);
+            
+            MethodInfo saveData = t.GetMethod("SaveData");
+            MethodInfo readFile = t.GetMethod("ReadFile");
 
-            Serializer serializer = new Serializer();
-            serializer.SerializeXML(set, "XML.txt");
-            serializer.SerializeJSON(set, "JSON.txt");
-            serializer.SerializeByLINQ(set, "LINQ.txt");
-
-            foreach (var el in serializer.DeSerializeXML("XML.txt"))
-            {
-                Console.WriteLine($"Firm name: {el.Name}");
-                foreach (var hrd in el.hrdepartment)
-                {
-                    Console.WriteLine($"HRD:{hrd.id}");
-                }
-            }
-
-            foreach (var el in serializer.DeSerializeJSON("JSON.txt"))
-            {
-                Console.WriteLine($"Firm name:{el.Name}");
-                foreach (var hrd in el.hrdepartment)
-                {
-                    Console.WriteLine($"HRD:{hrd.id}");
-                }
-            }
-
-            foreach (var el in serializer.DeSerializeByLINQ("LINQ.txt"))
-            {
-                Console.WriteLine($"Firm name:{el.Name}");
-                foreach (var hrd in el.hrdepartment)
-                {
-                    Console.WriteLine($"HRD:{hrd.id}");
-                }
-            }
+            saveData.Invoke(obj, new object[] {employees, Json});
+            var anser = readFile.Invoke(obj, new object[] {Json});
+            
+            var resultList = anser as List<Employee>;
+            foreach (var employee in resultList)
+                Console.WriteLine(employee.Info());
         }
     }
 }
